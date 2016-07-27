@@ -1,0 +1,4 @@
+Food Diary website
+
+These files merely represent the webpage itself and the cgi script. The server
+itself and the Mysql database need to be set up manually.

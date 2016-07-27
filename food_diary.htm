@@ -1,0 +1,165 @@
+<html>
+<head>
+<title>Food Diary</title>
+<script>
+function showUser() {
+    if (window.XMLHttpRequest) {
+        // code for IE7+, Firefox, Chrome, Opera, Safari
+        xmlhttp = new XMLHttpRequest();
+    } else {
+        // code for IE6, IE5
+        xmlhttp = new ActiveXObject("Microsoft.XMLHTTP");
+    }
+    xmlhttp.onreadystatechange = function() {
+        if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
+            document.getElementById("entry_table").innerHTML = xmlhttp.responseText;
+        }
+    };
+    xmlhttp.open("GET","../cgi-bin/food_diary.py",true);
+    xmlhttp.send();
+}
+function pushData(dt, bf, ln, dn) {
+    if (window.XMLHttpRequest) {
+        // code for IE7+, Firefox, Chrome, Opera, Safari
+        xmlhttp = new XMLHttpRequest();
+    } else {
+        // code for IE6, IE5
+        xmlhttp = new ActiveXObject("Microsoft.XMLHTTP");
+    }
+    xmlhttp.onreadystatechange = function() {
+        if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
+            document.getElementById("entry_table").innerHTML = xmlhttp.responseText;
+        }
+    };
+    xmlhttp.open("POST","../cgi-bin/food_diary.py",true);
+    xmlhttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+    xmlhttp.send("date="+dt+"&breakfast="+bf+"&lunch="+ln+"&dinner="+dn);
+    if (dt == "") {
+        alert("Please insert a date");
+        return;
+    }
+    var input_ids = ["date", "breakfast", "lunch", "dinner"];
+    for (var i = 0; i < input_ids.length; i++) {
+        document.getElementById(input_ids[i]).value = "";
+    }
+}
+function deleteRow(i) {
+    if (window.XMLHttpRequest) {
+        // code for IE7+, Firefox, Chrome, Opera, Safari
+        xmlhttp = new XMLHttpRequest();
+    } else {
+        // code for IE6, IE5
+        xmlhttp = new ActiveXObject("Microsoft.XMLHTTP");
+    }
+    xmlhttp.onreadystatechange = function() {
+        if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
+            document.getElementById("entry_table").innerHTML = xmlhttp.responseText;
+        }
+    };
+    i = i.toString();
+    var dt = document.getElementById(i + "date").innerHTML;
+    var bf = document.getElementById(i + "breakfast").innerHTML;
+    var ln = document.getElementById(i + "lunch").innerHTML;
+    var dn = document.getElementById(i + "dinner").innerHTML;
+    alert("Deleting row: "+dt+" "+bf+" "+ln+" "+dn);
+    dt = (dt == "None") ? "0000-00-00": dt;
+    xmlhttp.open("POST","../cgi-bin/food_diary.py",true);
+    xmlhttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+    xmlhttp.send("date="+dt+"&breakfast="+bf+"&lunch="+ln+"&dinner="+dn+"&delete=True");
+}
+function hideShow() {
+    var button = document.getElementById("hide");
+    var hiding = false;
+    var text = button.value;
+    if (text == "Show Old Entries") {
+        hiding = false;
+        button.value = "Hide Old Entries";
+    } else {
+        hiding = true;
+        button.value = "Show Old Entries";
+    }
+    var rows = document.getElementsByClassName("hidden");
+    for (var i = 0; i < rows.length; i++) {
+        rows[i].style = (hiding) ? "display:None;" : "";
+    }
+}
+var editing = false;
+var idEdit = false;
+function editElem(id) {
+    var elem = document.getElementById(id);
+    if (editing && editing != id) {
+        alert("Edit only one item at a time");
+        return;
+    } else if (idEdit) {
+        return;
+    } else {
+        editing = id;
+        idEdit = true;
+    }
+    elem.setAttribute("onclick", "");
+    var oldVal = elem.innerHTML
+    elem.innerHTML = "<input id='editForm'>";
+    var inp = document.getElementById("editForm");
+    inp.setAttribute("type", "text");
+    inp.setAttribute("value", oldVal);
+    var args = "(event, '" + id + "', '" + oldVal + "')"
+    inp.setAttribute("onkeydown", "itemKeyPress" + args + ";");
+}
+function itemKeyPress(event, id, origVal) {
+    var key = event.keyCode;
+    if (key == "27") { // Esc key
+        editing = false;
+        idEdit = false;
+        var elem = document.getElementById(id)
+        elem.innerHTML = origVal;
+        elem.setAttribute("onclick", "editElem('" + id + "')")
+    } else if (key == "13") { // Enter key
+        editing = false;
+        idEdit = false;
+        var newVal = document.getElementById("editForm").value;
+        var i = /\d+/.exec(id)[0];
+        var keys = [i + "date", i + "breakfast", i + "lunch", i + "dinner"];
+        var dict = {};
+        for (var j = 0; j < 4; j++) {
+            dict[keys[j]] = document.getElementById(keys[j]).innerHTML;
+        }
+        dict[id] = origVal;
+
+        xmlhttp.open("POST","../cgi-bin/food_diary.py",true);
+        xmlhttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+        xmlhttp.send("date="+dict[i+"date"]+"&breakfast="+dict[i+"breakfast"]+"&lunch="+dict[i+"lunch"]+"&dinner="+dict[i+"dinner"]+"&delete=True");
+        
+        dict[id] = newVal;
+        setTimeout(function() {xmlhttp.open("POST","../cgi-bin/food_diary.py",true);
+        xmlhttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+        xmlhttp.send("date="+dict[i+"date"]+"&breakfast="+dict[i+"breakfast"]+"&lunch="+dict[i+"lunch"]+"&dinner="+dict[i+"dinner"]);
+        }, 1000);
+    }
+}
+</script>
+</head>
+<body>
+<center>
+<h1>Food Diary</h1>
+</center>
+<input type='button' value='Show Old Entries' id='hide' onclick='hideShow()'>
+<center>
+<div id="entry_table"></div>
+<br><br>
+<center><div id="forms">
+    <form>
+    <table border='1' width='100%'>
+        <tr><td>Date: <input id='date' type='date' name='date' value='yyyy-mm-dd'></td>
+        <td>Breakfast: <input id='breakfast' type='text' name='breakfast' maxlength='50' size='30'></td>
+        <td>Lunch: <input id='lunch' type='text' name='lunch' maxlength='50' size='30'></td>
+        <td>Dinner: <input id='dinner' type='text' name='dinner' maxlength='50' size='30'></td></tr>
+    </table>
+    <input type='button' value='Submit!' onclick='pushData(document.getElementById("date").value, document.getElementById("breakfast").value, document.getElementById("lunch").value, document.getElementById("dinner").value)'>
+    </form>
+</div></center>
+<script>
+showUser();
+</script>
+</center>
+</body>
+</html>
