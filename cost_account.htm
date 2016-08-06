@@ -1,0 +1,202 @@
+<html>
+<head>
+<title>Cost Account</title>
+<script>
+function showUser() {
+    if (window.XMLHttpRequest) {
+        // code for IE7+, Firefox, Chrome, Opera, Safari
+        xmlhttp = new XMLHttpRequest();
+    } else {
+        // code for IE6, IE5
+        xmlhttp = new ActiveXObject("Microsoft.XMLHTTP");
+    }
+    xmlhttp.onreadystatechange = function() {
+        if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
+            document.getElementById("entry_table").innerHTML = xmlhttp.responseText;
+        }
+    };
+    xmlhttp.open("GET","../cgi-bin/cost_account.py",true);
+    xmlhttp.send();
+    setTimeout(function(){showSpending();}, 1000);
+}
+function pushData(dt, tp, dc, co) {
+    if (window.XMLHttpRequest) {
+        // code for IE7+, Firefox, Chrome, Opera, Safari
+        xmlhttp = new XMLHttpRequest();
+    } else {
+        // code for IE6, IE5
+        xmlhttp = new ActiveXObject("Microsoft.XMLHTTP");
+    }
+    xmlhttp.onreadystatechange = function() {
+        if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
+            document.getElementById("entry_table").innerHTML = xmlhttp.responseText;
+        }
+    };
+    if (dt == "") {
+        alert("Please insert a date");
+        return;
+    }
+	if (co) {
+        var floatnum = /^\d*(\.\d{1,2})?$/
+        if (!floatnum.test(co)) {
+            alert("Invalid cost format.");
+            return;
+        }
+	}
+    xmlhttp.open("POST","../cgi-bin/cost_account.py",true);
+    xmlhttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+    xmlhttp.send("date="+dt+"&type="+tp+"&description="+dc+"&cost="+co);
+    var input_ids = ["date", "type", "description", "cost"];
+    for (var i = 0; i < input_ids.length; i++) {
+        document.getElementById(input_ids[i]).value = "";
+    }
+    document.getElementById('date').value = new Date().toJSON().slice(0, 10);
+    setTimeout(function(){showSpending();}, 1000);
+}
+function deleteRow(i) {
+    if (window.XMLHttpRequest) {
+        // code for IE7+, Firefox, Chrome, Opera, Safari
+        xmlhttp = new XMLHttpRequest();
+    } else {
+        // code for IE6, IE5
+        xmlhttp = new ActiveXObject("Microsoft.XMLHTTP");
+    }
+    xmlhttp.onreadystatechange = function() {
+        if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
+            document.getElementById("entry_table").innerHTML = xmlhttp.responseText;
+        }
+    };
+    i = i.toString();
+    var dt = document.getElementById(i + "date").innerHTML;
+    var tp = document.getElementById(i + "type").innerHTML;
+    var dc = document.getElementById(i + "description").innerHTML;
+    var co = document.getElementById(i + "cost").innerHTML.substring(1);
+    alert("Deleting row: "+dt+" "+tp+" "+dc+" "+co);
+    dt = (dt == "None") ? "0000-00-00": dt;
+    xmlhttp.open("POST","../cgi-bin/cost_account.py",true);
+    xmlhttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+    xmlhttp.send("date="+dt+"&type="+tp+"&description="+dc+"&cost="+co+"&delete=True");
+    setTimeout(function(){showSpending();}, 1000);
+}
+function hideShow() {
+    var button = document.getElementById("hide");
+    var hiding = false;
+    var text = button.value;
+    if (text == "Show Old Entries") {
+        hiding = false;
+        button.value = "Hide Old Entries";
+    } else {
+        hiding = true;
+        button.value = "Show Old Entries";
+    }
+    var rows = document.getElementsByClassName("hidden");
+    for (var i = 0; i < rows.length; i++) {
+        rows[i].style = (hiding) ? "display:None;" : "";
+    }
+    setTimeout(function(){showSpending();}, 1000);
+}
+var editing = false;
+var idEdit = false;
+function editElem(id) {
+    var elem = document.getElementById(id);
+    if (editing && editing != id) {
+        alert("Edit only one item at a time");
+        return;
+    } else if (idEdit) {
+        return;
+    } else {
+        editing = id;
+        idEdit = true;
+    }
+    elem.setAttribute("onclick", "");
+    var oldVal = elem.innerHTML;
+    elem.innerHTML = "<input id='editForm'>";
+    var inp = document.getElementById("editForm");
+    inp.setAttribute("type", "text");
+    inp.setAttribute("value", oldVal);
+    var args = "(event, '" + id + "', '" + oldVal + "')"
+    inp.setAttribute("onkeydown", "itemKeyPress" + args + ";");
+}
+function itemKeyPress(event, id, origVal) {
+    var key = event.keyCode;
+    if (key == "27") { // Esc key
+        editing = false;
+        idEdit = false;
+        var elem = document.getElementById(id)
+        elem.innerHTML = origVal;
+        elem.setAttribute("onclick", "editElem('" + id + "')")
+    } else if (key == "13") { // Enter key
+        editing = false;
+        idEdit = false;
+        var newVal = document.getElementById("editForm").value;
+        var i = /\d+/.exec(id)[0];
+        var is_cost = id.includes('cost');
+        var keys = [i + "date", i + "type", i + "description", i + "cost"];
+        var dict = {};
+        for (var j = 0; j < 4; j++) {
+            dict[keys[j]] = document.getElementById(keys[j]).innerHTML;
+            if (j == 3) {
+                dict[keys[j]] = dict[keys[j]].substring(1);
+            }
+        }
+        dict[id] = origVal;
+        if (is_cost) {
+            dict[id] = dict[id].substring(1)
+        }
+
+        xmlhttp.open("POST","../cgi-bin/cost_account.py",true);
+        xmlhttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+        xmlhttp.send("date="+dict[i+"date"]+"&type="+dict[i+"type"]+"&description="+dict[i+"description"]+"&cost="+dict[i+"cost"]+"&delete=True");
+        
+        dict[id] = newVal;
+        if (is_cost) {
+            dict[id] = dict[id].substring(1)
+        }
+        setTimeout(function() {xmlhttp.open("POST","../cgi-bin/cost_account.py",true);
+        xmlhttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+        xmlhttp.send("date="+dict[i+"date"]+"&type="+dict[i+"type"]+"&description="+dict[i+"description"]+"&cost="+dict[i+"cost"]);
+        }, 1000);
+        setTimeout(function(){showSpending();}, 2000);
+    }
+}
+function showSpending() {
+    var table = document.getElementById("account_table");
+    var tbody = table.children[0];
+    var total_cost = 0.0;
+    for (var i = 1, row; row = tbody.rows[i]; i++) {
+        var cost = parseFloat(row.cells[3].children[0].innerHTML.substring(1));
+        total_cost += cost;
+    }
+    document.getElementById('after_table').innerHTML = '<h1>Total Cost Shown: <div style="color:red">$' + total_cost + '</div></h1>';
+}
+</script>
+</head>
+<body>
+<center>
+<h1>Cost Account</h1>
+</center>
+<input type='button' value='Show Old Entries' id='hide' onclick='hideShow()'>
+<center>
+<div id="entry_table"></div>
+<br><br>
+<center><div id="forms">
+    <form>
+    <table border='1' width='100%'>
+        <tr><td>Date: <input id='date' type='date' name='date' value=''></td>
+        <script>
+            document.getElementById('date').setAttribute('value', new Date().toJSON().slice(0, 10));
+        </script>
+        <td>Type: <input id='type' type='text' name='type' maxlength='50' size='30'></td>
+        <td>Description: <input id='description' type='text' name='description' maxlength='50' size='30'></td>
+        <td>Cost: <input id='cost' type='text' name='cost' maxlength='10' size='30'></td></tr>
+    </table>
+    <input type='button' value='Submit!' onclick='pushData(document.getElementById("date").value, document.getElementById("type").value, document.getElementById("description").value, document.getElementById("cost").value)'>
+    </form>
+</div></center>
+<div id="after_table"></div>
+<script>
+showUser();
+</script>
+</center>
+</body>
+</html>
