@@ -42,6 +42,7 @@ function pushData(dt, bf, ln, dn) {
     for (var i = 0; i < input_ids.length; i++) {
         document.getElementById(input_ids[i]).value = "";
     }
+    document.getElementById('date').value = new Date().toJSON().slice(0, 10);
 }
 function deleteRow(i) {
     if (window.XMLHttpRequest) {
@@ -149,7 +150,10 @@ function itemKeyPress(event, id, origVal) {
 <center><div id="forms">
     <form>
     <table border='1' width='100%'>
-        <tr><td>Date: <input id='date' type='date' name='date' value='yyyy-mm-dd'></td>
+        <tr><td>Date: <input id='date' type='date' name='date' value=''></td>
+        <script>
+            document.getElementById('date').setAttribute('value', new Date().toJSON().slice(0, 10));
+        </script>
         <td>Breakfast: <input id='breakfast' type='text' name='breakfast' maxlength='50' size='30'></td>
         <td>Lunch: <input id='lunch' type='text' name='lunch' maxlength='50' size='30'></td>
         <td>Dinner: <input id='dinner' type='text' name='dinner' maxlength='50' size='30'></td></tr>

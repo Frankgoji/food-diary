@@ -2,3 +2,7 @@ Food Diary website
 
 These files merely represent the webpage itself and the cgi script. The server
 itself and the Mysql database need to be set up manually.
+
+The website uses AJAX to be able to update itself.
+
+TODO: get latest version
